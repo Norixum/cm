@@ -3,5 +3,5 @@
 # Quick start
 ```console
 $ odin build .
-$ odin build . 2>&1 | ./cm
+$ odin build ./test 2>&1 | ./cm
 ```
