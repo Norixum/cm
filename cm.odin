@@ -7,6 +7,12 @@ import "core:strings"
 import "core:strconv"
 import "core:sys/linux"
 
+foreign import libc "system:c"
+
+foreign libc {
+    environ: [^]cstring
+}
+
 Error :: struct {
     line_idx: int,
     file_name: string,
@@ -71,7 +77,7 @@ main :: proc() {
                 return
             }
             switch buffer[0] {
-                case 'n': continue outer
+                case '\n', 'n': continue outer
                 case 'e': break inner
                 case: fmt.println("Unknown option:", buffer[0])
             }
@@ -84,8 +90,7 @@ main :: proc() {
         }
         if pid == 0 {
             argv := []cstring {"hx", fmt.caprintf("%v:%v:%v", error.file_name, error.line_number, error.column_number), nil}
-            envp := []cstring {nil}
-            errno := linux.execve("/usr/bin/hx", raw_data(argv), raw_data(envp))
+            errno := linux.execve("/usr/bin/hx", raw_data(argv), environ)
             fmt.println("Bruh", errno)
             return
         } else {
