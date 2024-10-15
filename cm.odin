@@ -52,7 +52,7 @@ main :: proc() {
     }
 
     outer: for error, i in errors {
-        fmt.printf("\x1B[4m%v\x1B[24m", content[error.line_idx])
+        fmt.printf("\x1B[1m%v\x1B[22m", content[error.line_idx])
         suffix_len: int
         if i + 1 < len(errors) {
             suffix_len = errors[i + 1].line_idx - error.line_idx
