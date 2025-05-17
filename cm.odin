@@ -22,6 +22,29 @@ seconds_to_duration :: proc(seconds: f64) -> time.Duration {
     return cast(time.Duration) (seconds * math.pow_f64(10, 9))
 }
 
+print_errors :: proc(errors: []Error, active_error: int, content: []string) {
+    fmt.print("\033[H\033[J") // Clear screen
+    for error, i in errors {
+        if i == active_error {
+            fmt.print("\033[7m")
+            fmt.println(strings.trim_space(content[error.line_idx]))
+            fmt.print("\033[27m")
+
+            suffix_len: int
+            if i + 1 < len(errors) {
+                suffix_len = errors[i + 1].line_idx - error.line_idx
+            } else {
+                suffix_len = len(content) - error.line_idx
+            }
+            for i := error.line_idx + 1; i < error.line_idx + suffix_len; i += 1 {
+                fmt.print(content[i])
+            }
+        } else {
+            fmt.println(strings.trim_space(content[error.line_idx]))
+        }
+    }
+}
+
 main :: proc() {
     pipefd: [2]linux.Fd
     if errno := linux.pipe2(&pipefd, {}); errno != .NONE {
@@ -102,6 +125,8 @@ main :: proc() {
             append(&errors, error)
         }
 
+        if len(errors) == 0 { return }
+
         term: posix.termios
         if result := posix.tcgetattr(posix.STDIN_FILENO, &term); result == .FAIL {
             fmt.eprintln("ERROR: Can't get termios")
@@ -113,29 +138,6 @@ main :: proc() {
 
         posix.tcsetattr(posix.STDIN_FILENO, .TCSANOW, &nonc_term)
         fmt.print("\033[H\033[J") // Clear screen
-
-        print_errors :: proc(errors: []Error, active_error: int, content: []string) {
-            fmt.print("\033[H\033[J") // Clear screen
-            for error, i in errors {
-                if i == active_error {
-                    fmt.print("\033[7m")
-                    fmt.println(strings.trim_space(content[error.line_idx]))
-                    fmt.print("\033[27m")
-
-                    suffix_len: int
-                    if i + 1 < len(errors) {
-                        suffix_len = errors[i + 1].line_idx - error.line_idx
-                    } else {
-                        suffix_len = len(content) - error.line_idx
-                    }
-                    for i := error.line_idx + 1; i < error.line_idx + suffix_len; i += 1 {
-                        fmt.print(content[i])
-                    }
-                } else {
-                    fmt.println(strings.trim_space(content[error.line_idx]))
-                }
-            }
-        }
 
         cursor_line := 0
         quit := false
