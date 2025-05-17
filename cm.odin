@@ -75,13 +75,10 @@ main :: proc() {
         reader: bufio.Reader
         bufio.reader_init(&reader, os.stream_from_handle(cast(os.Handle)pipefd[0]))
         content: [dynamic]string
-        i := 0
         for {
             line, err := bufio.reader_read_string(&reader, '\n')
             if err == .EOF do break
             append(&content, line)
-            fmt.printfln("%v: %v", i, line[:len(line) - 1])
-            i += 1
         }
 
         errors: [dynamic]Error
@@ -122,7 +119,7 @@ main :: proc() {
             for error, i in errors {
                 if i == active_error {
                     fmt.print("\033[7m")
-                    fmt.printfln("%v:%v:%v", error.file_name, error.line_number, error.column_number)
+                    fmt.println(strings.trim_space(content[error.line_idx]))
                     fmt.print("\033[27m")
 
                     suffix_len: int
@@ -135,7 +132,7 @@ main :: proc() {
                         fmt.print(content[i])
                     }
                 } else {
-                    fmt.printfln("%v:%v:%v", error.file_name, error.line_number, error.column_number)
+                    fmt.println(strings.trim_space(content[error.line_idx]))
                 }
             }
         }
